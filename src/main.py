@@ -64,7 +64,11 @@ class SignalGeneratorGUI(QMainWindow, gui_main_user_interface):
                 chunk_size = self.spinBox_lsl_chunk_size.value()
                 format = self.lineEdit_lsl_format.text()
                 n_cha = self.spinBox_n_cha.value()
-                l_cha = self.lineEdit_l_cha.text().split(';')
+                l_cha_text = self.lineEdit_l_cha.text()
+                if l_cha_text == 'auto':
+                    l_cha = [str(c) for c in range(n_cha)]
+                else:
+                    l_cha = l_cha_text.split(';')
                 units = self.lineEdit_signal_units.text()
                 mean = self.doubleSpinBox_signal_mean.value()
                 std = self.doubleSpinBox_signal_std.value()
