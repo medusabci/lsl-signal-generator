@@ -52,7 +52,7 @@ class SignalGenerator:
         self.io_thread.start()
 
     def generate_uid(self):
-        uid = self.stream_name.lower() + str(round(time.time() * 1000.0))
+        uid = self.stream_name.lower() + '-' + str(round(time.time() * 1000.0))
         return uid
 
     def close(self):
