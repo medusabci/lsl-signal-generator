@@ -19,9 +19,6 @@ class SignalGenerator:
             raise ValueError('The number of channel labels does not match with '
                              'the number of channels')
 
-        # Generator UID
-        self.uid = "ce5de488-ca9f-11eb-b8bc-0242ac130003"
-
         # Parameters
         self.stream_name = stream_name
         self.stream_type = stream_type
@@ -33,6 +30,9 @@ class SignalGenerator:
         self.mean = mean
         self.std = std
         self.sample_rate = sample_rate
+
+        # Generator UID
+        self.uid = self.generate_uid()
 
         # Event for stopping the IO thread
         self.io_run = threading.Event()
@@ -50,6 +50,10 @@ class SignalGenerator:
             args=[self.io_run]
         )
         self.io_thread.start()
+
+    def generate_uid(self):
+        uid = self.stream_name.lower() + str(round(time.time() * 1000.0))
+        return uid
 
     def close(self):
         self.io_run.clear()
