@@ -1,0 +1,24 @@
+
+PASOS
+> Víctor Martínez-Cagigal, 16/04/2021
+------------------------------------
+
+// Crear un environment de python con solamente los paquetes que requiere la aplicación
+python -m venv python-env
+cd python-env/Scripts
+activate
+
+python -m pip install --upgrade pip
+pip install --upgrade setuptools
+pip install -r "E:\SoftwareProjects\photodiode\src_python\requirements.txt"
+pip install pyinstaller
+
+// Crear una carpeta que contendrá la build e irnos a ese path
+cd E:\SoftwareProjects\photodiode\build
+
+// Comprimir el main.py con pyinstaller en un directorio
+// IMPORTANTE: añadir todos aquellos archivos que no son .py y que, por tanto, pyinstaller no conoce
+
+[PASTE THE BUILD COMMAND]
+
+// Crear un EXE autoextraíble con WinRAR (opción SFX) o un programa similar

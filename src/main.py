@@ -38,7 +38,7 @@ class SignalGeneratorGUI(QMainWindow, gui_main_user_interface):
             self.dir = os.path.dirname(__file__)
             self.stl = gui_utils.set_css_and_theme(
                 self, os.path.join('utils/gui_stylesheet.css'), 'dark')
-            # self.setWindowIcon(QIcon('icons/icon_photodiode.png'))
+            self.setWindowIcon(QIcon('icons/icon_signalgen.png'))
             self.setWindowTitle('Signal generator')
             # Current application status
             self.current_status = None
