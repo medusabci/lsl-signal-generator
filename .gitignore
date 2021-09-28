@@ -1,4 +1,5 @@
 python-env/
+venv/
 dist/
 build/
 install/
