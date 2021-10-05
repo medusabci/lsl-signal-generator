@@ -31,9 +31,6 @@ class SignalGenerator:
         self.std = std
         self.sample_rate = sample_rate
 
-        # Generator UID
-        self.uid = self.generate_uid()
-
         # Event for stopping the IO thread
         self.io_run = threading.Event()
         self.io_run.set()
@@ -51,22 +48,21 @@ class SignalGenerator:
         )
         self.io_thread.start()
 
-    def generate_uid(self):
-        uid = self.stream_name.lower() + '-' + str(round(time.time() * 1000.0))
-        return uid
-
     def close(self):
         self.io_run.clear()
         self.io_thread.join()
 
     def init_send_lsl(self):
         # Create the steam outlet
+        source_id = '_'.join([self.stream_name, self.stream_type,
+                              str(self.n_cha), str(self.sample_rate),
+                              self.format])
         lsl_info = StreamInfo(name=self.stream_name,
                               type=self.stream_type,
                               channel_count=self.n_cha,
                               nominal_srate=self.sample_rate,
                               channel_format=self.format,
-                              source_id=self.uid)
+                              source_id=source_id)
         # lsl_info.desc().append_child_value("manufacturer", "")
         channels = lsl_info.desc().append_child("channels")
         for l in self.l_cha:
