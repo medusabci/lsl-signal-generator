@@ -11,7 +11,8 @@ from PyQt5 import uic
 from signal_generator import SignalGenerator
 from utils.gui_notifications import NotificationStack
 from utils import gui_utils
-import sys, os
+from utils import theme_dark
+import sys, os, ctypes, threading
 
 # Load the .ui file
 gui_main_user_interface = uic.loadUiType("signal_generator.ui")[0]
@@ -32,13 +33,21 @@ class SignalGeneratorGUI(QMainWindow, gui_main_user_interface):
             # Setup UI
             self.setupUi(self)
             self.resize(400, 450)
+
+            # Tell windows that this application is not pythonw.exe so it can
+            # have its own icon
+            signalgenid = u'gib.medusa.signalgen'
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                signalgenid)
+            threading.current_thread().name = "SignalGen_MainGUI"
+
             # Initialize the notification stack
             self.notifications = NotificationStack(parent=self)
             # Initialize the application
             self.dir = os.path.dirname(__file__)
             self.stl = gui_utils.set_css_and_theme(
                 self, os.path.join('utils/gui_stylesheet.css'), 'dark')
-            self.setWindowIcon(QIcon('icons/icon_signalgen.png'))
+            self.setWindowIcon(QIcon('icons/icon.png'))
             self.setWindowTitle('Signal generator')
             # Current application status
             self.current_status = None
@@ -46,14 +55,21 @@ class SignalGeneratorGUI(QMainWindow, gui_main_user_interface):
             # Initialize the notification stack
             self.notifications = NotificationStack(parent=self)
             # Buttons
+            self.button_play.setIcon(gui_utils.get_icon(
+                "play.svg", custom_color=theme_dark.THEME_GREEN))
             self.button_play.clicked.connect(self.on_play)
+            self.button_stop.setIcon(gui_utils.get_icon(
+                "stop.svg", custom_color=theme_dark.THEME_RED))
             self.button_stop.clicked.connect(self.on_stop)
             # Init signal generator
             self.signal_generator = None
             # Show the application
             self.show()
         except Exception as e:
+            if self.signal_generator is not None:
+                self.signal_generator.close()
             self.notifications.new_notification('[ERROR] %s' % str(e))
+            print(str(e))
 
     def on_play(self):
         try:

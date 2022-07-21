@@ -43,6 +43,7 @@ class SignalGenerator:
         # Run IO function in other thread
         self.io_init_timestamp = None
         self.io_thread = threading.Thread(
+            name='SignalGenerator_Data_Thread',
             target=self.send_data,
             args=[self.io_run]
         )

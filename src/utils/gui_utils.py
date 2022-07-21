@@ -1,6 +1,8 @@
 from utils import theme_dark
-from PyQt5 import QtGui, QtWidgets
-import os
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5 import uic
+import os, re
 
 def modify_property(handle, name, value):
     """ Modifies a CSS property of a given handle.
@@ -70,6 +72,68 @@ def get_property(handle, name):
             # contains 'color'
             css = css[idx_1 + idx_2:]
     return value
+
+
+def get_icon(icon_name, theme_colors=None, enabled=True, custom_color=None):
+    IMG_FOLDER = os.getcwd() + ""
+    if theme_colors is None:
+        theme_colors = get_theme_colors('dark')
+
+    # Does it exist?
+    rel_path = "%s/icons/%s" % (IMG_FOLDER, icon_name)
+    if not os.path.isfile(rel_path):
+        print('[get_icon()] Icon %s not found!' % rel_path)
+        return None
+
+    # Get the icon colors (gradient)
+    if enabled:
+        color_start = theme_dark.THEME_ICON_COLOR_START
+        color_end = theme_dark.THEME_ICON_COLOR_END
+    else:
+        color_start = theme_dark.THEME_ICON_COLOR_DISABLED
+        color_end = theme_dark.THEME_ICON_COLOR_DISABLED
+
+    # Custom color?
+    if custom_color is not None:
+        color_start = custom_color
+        color_end = custom_color
+
+    # Read the SVG data
+    fin = open(rel_path, "rt")
+    data = fin.read()
+    fin.close()
+
+    # Detect if gradient is there
+    gradient = '<linearGradient id="grad1" x1="0%%" y1="100%%" x2="100%%" ' \
+               'y2="0%%"> <stop offset="0%%" ' \
+               'style="stop-color:%s;stop-opacity:1"/> <stop ' \
+               'offset="100%%" style="stop-color:%s;stop-opacity:1" />' \
+               '</linearGradient>' % (color_start, color_end)
+    if '"grad1"' not in data:
+        # Not there, so create it
+        idx = data.find('<path')
+        data = data[:idx] + ('<defs>%s</defs>' % gradient) + data[idx:]
+    else:
+        # It's there, so we need to update it
+        for match in re.findall('<defs>(.*?)</defs>', data):
+            data = data.replace('<defs>%s</defs>' % match, '<defs>%s</defs>'
+                                % gradient)
+
+    # Modify the SVG data to insert the gradient
+    fill_str = 'url(#grad1)'
+    if data.count('fill=') > 0:
+        for match in re.findall('fill="(.*?)\"', data):
+            data = data.replace('fill="%s"' % match, 'fill="%s"' % fill_str)
+    else:
+        data = data.replace('<path ', '<path fill="%s" ' % fill_str)
+
+    # Write it in the file
+    fin = open(rel_path, "wt")
+    fin.write(data)
+    fin.close()
+
+    # Return the icon
+    return QIcon(rel_path)
 
 # ---------------------------------------------- THEME DEFINITIONS ----------------------------------------------- #
 
