@@ -13,7 +13,6 @@ import constants
 from signal_generator import SignalGenerator
 from gui.gui_notifications import NotificationStack
 from gui import gui_utils
-from gui import theme_dark
 import sys, os, ctypes, threading
 from constants import *
 
