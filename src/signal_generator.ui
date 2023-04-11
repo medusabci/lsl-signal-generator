@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>417</width>
-    <height>602</height>
+    <width>420</width>
+    <height>637</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -104,6 +104,9 @@
        </item>
        <item row="0" column="1">
         <widget class="QSpinBox" name="spinBox_n_cha">
+         <property name="minimum">
+          <number>1</number>
+         </property>
          <property name="maximum">
           <number>999</number>
          </property>
@@ -141,48 +144,13 @@
         </widget>
        </item>
        <item row="3" column="0">
-        <widget class="QLabel" name="label_10">
-         <property name="text">
-          <string>Signal params</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <item>
-          <widget class="QLabel" name="label_9">
-           <property name="text">
-            <string>Mean</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_signal_mean"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_11">
-           <property name="text">
-            <string>Std</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_signal_std">
-           <property name="value">
-            <double>1.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="4" column="0">
         <widget class="QLabel" name="label_2">
          <property name="text">
           <string>Sample rate</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="3" column="1">
         <widget class="QDoubleSpinBox" name="doubleSpinBox_signal_sample_rate">
          <property name="maximum">
           <double>9999.000000000000000</double>
@@ -190,6 +158,111 @@
          <property name="value">
           <double>250.000000000000000</double>
          </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>Generator</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QComboBox" name="comboBox_generator">
+         <item>
+          <property name="text">
+           <string>EEG (closed eyes)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>EEG (open eyes)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Uniform</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="title">
+          <string>Uniform params</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="QLabel" name="label_9">
+              <property name="text">
+               <string>Mean</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_signal_mean"/>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>Std</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_signal_std">
+              <property name="value">
+               <double>1.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>EEG params</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QCheckBox" name="checkBox_ac_power">
+            <property name="text">
+             <string>Enable AC power frequency (50 Hz)</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="checkBox_pink_online">
+            <property name="text">
+             <string>Real-time pink noise generation</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>
@@ -226,7 +299,7 @@
          </property>
          <property name="icon">
           <iconset>
-           <normaloff>icons/icon_play.png</normaloff>icons/icon_play.png</iconset>
+           <normaloff>gui/images/icons/play.svg</normaloff>gui/images/icons/play.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -252,7 +325,7 @@
          </property>
          <property name="icon">
           <iconset>
-           <normaloff>icons/icon_stop.png</normaloff>icons/icon_stop.png</iconset>
+           <normaloff>gui/images/icons/stop.svg</normaloff>gui/images/icons/stop.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -275,8 +348,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>417</width>
-     <height>21</height>
+     <width>420</width>
+     <height>22</height>
     </rect>
    </property>
   </widget>

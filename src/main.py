@@ -1,18 +1,21 @@
 """
-Author:   Eduardo Santamaría-Vázquez
-Date:     09 June 2021
-Version:  0.1
+Author:   Víctor Martínez-Cagigal & Eduardo Santamaría-Vázquez
+Date:     11 April 2023
+Version:  2.0
 """
 
 # PYTHON MODULES
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5 import uic
+
+import constants
 from signal_generator import SignalGenerator
-from utils.gui_notifications import NotificationStack
-from utils import gui_utils
-from utils import theme_dark
+from gui.gui_notifications import NotificationStack
+from gui import gui_utils
+from gui import theme_dark
 import sys, os, ctypes, threading
+from constants import *
 
 # Load the .ui file
 gui_main_user_interface = uic.loadUiType("signal_generator.ui")[0]
@@ -45,22 +48,32 @@ class SignalGeneratorGUI(QMainWindow, gui_main_user_interface):
             self.notifications = NotificationStack(parent=self)
             # Initialize the application
             self.dir = os.path.dirname(__file__)
-            self.stl = gui_utils.set_css_and_theme(
-                self, os.path.join('utils/gui_stylesheet.css'), 'dark')
-            self.setWindowIcon(QIcon('icons/icon.png'))
-            self.setWindowTitle('Signal generator')
+            self.theme_colors = gui_utils.get_theme_colors('dark')
+            self.stl = gui_utils.set_css_and_theme(self, self.theme_colors)
+            self.setWindowIcon(QIcon('gui/images/icons/icon.png'))
+            self.setWindowTitle('Signal generator v%s' % constants.VERSION)
             # Current application status
             self.current_status = None
             self.set_status(PD_READY)
             # Initialize the notification stack
             self.notifications = NotificationStack(parent=self)
             # Buttons
-            self.button_play.setIcon(gui_utils.get_icon(
-                "play.svg", custom_color=theme_dark.THEME_GREEN))
+            self.button_play.setIcon(
+                gui_utils.get_icon("play.svg",
+                                   custom_color=self.theme_colors['THEME_GREEN']
+                                   )
+            )
             self.button_play.clicked.connect(self.on_play)
-            self.button_stop.setIcon(gui_utils.get_icon(
-                "stop.svg", custom_color=theme_dark.THEME_RED))
+            self.button_stop.setIcon(
+                gui_utils.get_icon("stop.svg",
+                                   custom_color=self.theme_colors['THEME_RED']))
             self.button_stop.clicked.connect(self.on_stop)
+            # Listeners
+            self.spinBox_n_cha.valueChanged.connect(self.on_change_n_cha)
+            self.comboBox_generator.currentTextChanged.connect(
+                self.on_change_generator)
+            self.on_change_n_cha()
+            self.on_change_generator()
             # Init signal generator
             self.signal_generator = None
             # Show the application
@@ -86,20 +99,25 @@ class SignalGeneratorGUI(QMainWindow, gui_main_user_interface):
                 else:
                     l_cha = l_cha_text.split(';')
                 units = self.lineEdit_signal_units.text()
-                mean = self.doubleSpinBox_signal_mean.value()
-                std = self.doubleSpinBox_signal_std.value()
                 sample_rate = self.doubleSpinBox_signal_sample_rate.value()
+
+                gen_settings = dict()
+                gen_settings["gen_type"] = self.comboBox_generator.currentText()
+                gen_settings["eeg_ac"] = self.checkBox_ac_power.isChecked()
+                gen_settings["eeg_pink"] = "real-time" if \
+                    self.checkBox_pink_online.isChecked() else "offline"
+                gen_settings["uniform_mean"] = \
+                    self.doubleSpinBox_signal_mean.value()
+                gen_settings["uniform_std"] = \
+                    self.doubleSpinBox_signal_std.value()
+
                 # Signal generator
-                self.signal_generator = SignalGenerator(stream_name=stream_name,
-                                                        stream_type=stream_type,
-                                                        chunk_size=chunk_size,
-                                                        format=format,
-                                                        n_cha=n_cha,
-                                                        l_cha=l_cha,
-                                                        units=units,
-                                                        mean=mean,
-                                                        std=std,
-                                                        sample_rate=sample_rate)
+                self.signal_generator = SignalGenerator(
+                    stream_name=stream_name, stream_type=stream_type,
+                    chunk_size=chunk_size, format=format, n_cha=n_cha,
+                    l_cha=l_cha, units=units, sample_rate=sample_rate,
+                    gen_settings=gen_settings)
+
                 # Init the LSL stream
                 self.signal_generator.init_send_lsl()
                 # Modify the status
@@ -133,6 +151,32 @@ class SignalGeneratorGUI(QMainWindow, gui_main_user_interface):
                 print('Exception: ' + 'Unknown status: ' + status)
         except Exception as e:
             self.notifications.new_notification('[ERROR] %s' % str(e))
+
+    def on_change_n_cha(self):
+        n_cha = self.spinBox_n_cha.value()
+
+        # Get a default list of channels
+        if n_cha <= len(EEG_10_20):
+            l_cha = EEG_10_20[:n_cha]
+        elif n_cha <= len(EEG_10_10):
+            l_cha = EEG_10_10[:n_cha]
+        elif n_cha <= len(EEG_10_05):
+            l_cha = EEG_10_05[:n_cha]
+        else:
+            l_cha = [str(i) for i in range(n_cha)]
+        self.lineEdit_l_cha.setText(';'.join(l_cha))
+
+    def on_change_generator(self):
+        if self.comboBox_generator.currentText() == "Uniform":
+            self.doubleSpinBox_signal_mean.setEnabled(True)
+            self.doubleSpinBox_signal_std.setEnabled(True)
+            self.checkBox_ac_power.setEnabled(False)
+            self.checkBox_pink_online.setEnabled(False)
+        else:
+            self.doubleSpinBox_signal_mean.setEnabled(False)
+            self.doubleSpinBox_signal_std.setEnabled(False)
+            self.checkBox_ac_power.setEnabled(True)
+            self.checkBox_pink_online.setEnabled(True)
 
     def closeEvent(self, event):
         try:
