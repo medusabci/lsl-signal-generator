@@ -115,16 +115,17 @@ class SignalGenerator:
             # Assert that the parse to float is correct
             try:
                 if self.lsl_outlet is not None:
-                    # sample = self.std * np.random.randn(
-                    #     self.chunk_size, self.n_cha) + self.mean
-                    sample = self.generator.get_chunk(self.chunk_size)
-                    sample = sample.tolist()
+                    tic = time.time()
+                    sample = self.generator.get_chunk(self.chunk_size).tolist()
                     # Get a time stamp in seconds
                     stamp = local_clock()
                     # Now send it
                     self.lsl_outlet.push_chunk(sample, stamp)
                     # Wait
-                    time.sleep(self.chunk_size / self.sample_rate)
+                    time.sleep(
+                        (self.chunk_size / self.sample_rate) -
+                        (time.time() - tic)
+                    )
             except Exception as e:
                 raise e
         print('[SignalGenerator] > IO thread done.')
