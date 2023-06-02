@@ -16,6 +16,7 @@ import sys, os, ctypes, threading
 from constants import *
 import numpy as np
 import socket
+import multiprocessing
 
 # Load the .ui file
 gui_main_user_interface = uic.loadUiType("signal_generator.ui")[0]
@@ -182,8 +183,10 @@ class SignalGeneratorGUI(QMainWindow, gui_main_user_interface):
             n_samples = self.signal_generator.n_chunks_sent * \
                         self.signal_generator.chunk_size
             n_channels = self.signal_generator.n_cha
-            approx_fs = self.signal_generator.chunk_size / np.mean(np.diff(
-                np.array(self.signal_generator.buffer_sent_times)))
+            approx_fs = 0
+            if len(self.signal_generator.buffer_sent_times) >= 2:
+                approx_fs = self.signal_generator.chunk_size / np.mean(np.diff(
+                    np.array(self.signal_generator.buffer_sent_times)))
             self.label_status.setText(
                 "Sent: [%i samples x %i channels] - Approx. fs of %.2f Hz" %
                 (n_samples, n_channels, approx_fs)
@@ -224,8 +227,8 @@ class SignalGeneratorGUI(QMainWindow, gui_main_user_interface):
             self.notifications.new_notification('[ERROR] %s' % str(e))
 
 
-
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     application = QApplication(sys.argv)
     main_window = SignalGeneratorGUI()
     sys.exit(application.exec_())
