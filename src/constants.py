@@ -1,9 +1,9 @@
 """
 Author:   Víctor Martínez-Cagigal & Eduardo Santamaría-Vázquez
-Date:     13 April 2023
+Date:     02 June 2023
 Version:  2.1
 """
-VERSION = "2.1"
+VERSION = "2.2"
 
 # Images folder
 IMG_FOLDER = 'gui/images'

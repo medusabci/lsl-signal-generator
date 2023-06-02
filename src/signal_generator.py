@@ -1,7 +1,7 @@
 """
 Author:   Víctor Martínez-Cagigal & Eduardo Santamaría-Vázquez
-Date:     11 April 2023
-Version:  2.0
+Date:     02 June 2023
+Version:  2.2
 """
 
 from pylsl import StreamInfo, StreamOutlet, local_clock
@@ -9,12 +9,13 @@ import time
 import threading
 import numpy as np
 import pandas as pd
+import multiprocessing
 
 
 class SignalGenerator:
 
     def __init__(self, stream_name, stream_type, chunk_size, format, n_cha,
-                 l_cha, units, sample_rate, gen_settings):
+                 l_cha, units, sample_rate, gen_settings, hostname):
 
         # Error check
         if len(l_cha) != n_cha:
@@ -31,6 +32,7 @@ class SignalGenerator:
         self.units = units
         self.sample_rate = sample_rate
         self.gen_settings = gen_settings
+        self.hostname = hostname
 
         # Initialize the generator
         if self.gen_settings["gen_type"] == "EEG (closed eyes)":
@@ -58,33 +60,62 @@ class SignalGenerator:
         else:
             raise ValueError("Unknown generator value: %s!" % self.generator)
 
-        # Event for stopping the IO thread
-        self.io_run = threading.Event()
-        self.io_run.set()
+        # Offline generation of data
+        #   This allows us to avoid delays regarding real-time EEG
+        #   generation. Instead, we generate N chunks of data beforehand and
+        #   loop over them circularly
+        OFFLINE_N_CHUNKS = 1000
+        self.eeg_buffer = self.generator.get_chunks(
+            OFFLINE_N_CHUNKS, self.chunk_size
+        )
+        self.n_chunks_sent = 0
+        self.buffer_sent_times = list()
 
         # LSL
+        self.update_queue = multiprocessing.Queue(maxsize=0)
         self.lsl_outlet = None
-        self.lsl_buffer = []
-        self.lsl_thread = None
 
         # Run IO function in other thread
+        #   This thread sends data whenever it is required
+        self.io_run = threading.Event()
+        self.io_run.set()   # Event to control the thread
         self.io_init_timestamp = None
         self.io_thread = threading.Thread(
-            name='SignalGenerator_Data_Thread',
+            name='SignalGenerator_IO_Thread',
             target=self.send_data,
-            args=[self.io_run]
+            args=[self.io_run, ]
         )
         self.io_thread.start()
 
+        # Run a timer in other process
+        #   This timer puts a flag in the update_queue to notify that we must
+        #   send a chunk of data to guarantee the sample_rate. This timer is
+        #   run in other process to guarantee independent computation of the
+        #   ms delay (if it is run in a thread a latency error will be
+        #   expected so the sample_rate will not be reached exactly)
+        chunk_ms = 1000 * self.chunk_size / self.sample_rate
+        self.stop_process = multiprocessing.Value('i', 0)
+        self.timer_process = multiprocessing.Process(
+            name='SignalGenerator_Timer_Process',
+            target=self.timer,
+            args=(self.stop_process, chunk_ms, self.update_queue)
+        )
+        self.timer_process.start()
+
     def close(self):
+        # Stop events
         self.io_run.clear()
+        self.stop_process.value = 1
+
+        # Wait until the thread and process are closed
         self.io_thread.join()
+        self.timer_process.join()
 
     def init_send_lsl(self):
         # Create the steam outlet
         source_id = '_'.join([self.stream_name, self.stream_type,
                               str(self.n_cha), str(self.sample_rate),
-                              self.format])
+                              self.format, self.hostname])
         lsl_info = StreamInfo(name=self.stream_name,
                               type=self.stream_type,
                               channel_count=self.n_cha,
@@ -106,29 +137,52 @@ class SignalGenerator:
 
     def close_lsl(self):
         self.lsl_outlet = None
-        self.lsl_buffer = []
         print('[SignalGenerator] > LSL stream closed.')
 
-    # In Thread
+    # Running in SignalGenerator_IO_Thread
     def send_data(self, running_event):
+        c_idx = -1       # Chunk index
         while running_event.is_set():
             # Assert that the parse to float is correct
             try:
-                if self.lsl_outlet is not None:
-                    tic = time.time()
-                    sample = self.generator.get_chunk(self.chunk_size).tolist()
-                    # Get a time stamp in seconds
-                    stamp = local_clock()
-                    # Now send it
-                    self.lsl_outlet.push_chunk(sample, stamp)
-                    # Wait
-                    time.sleep(
-                        (self.chunk_size / self.sample_rate) -
-                        (time.time() - tic)
-                    )
+                if self.lsl_outlet is not None and \
+                        not self.update_queue.empty():
+                    timestamp = self.update_queue.get_nowait()
+                    if timestamp:
+                        # Update chunk index if necessary
+                        c_idx += 1
+                        if c_idx >= self.eeg_buffer.shape[0]:
+                            c_idx = 0
+
+                        # Send through LSL
+                        self.lsl_outlet.push_chunk(
+                            np.squeeze(self.eeg_buffer[c_idx, :, :]).tolist(),
+                            timestamp
+                        )
+                        self.n_chunks_sent += 1
+                        self.buffer_sent_times.append(timestamp)
+                        self.buffer_sent_times = self.buffer_sent_times[-100:]
             except Exception as e:
                 raise e
         print('[SignalGenerator] > IO thread done.')
+
+    # Runnning in SignalGenerator_Timer_Process
+    @staticmethod
+    def timer(stop_event, update_ms, queue_update):
+        def accurate_delay(delay_ms):
+            _ = time.perf_counter() + delay_ms / 1000
+            while time.perf_counter() < _:
+                pass
+
+        # Push an item into the update queue each update_ms
+        while not stop_event.value:
+            try:
+                accurate_delay(update_ms)
+                queue_update.put(time.perf_counter())
+            except Exception as e:
+                print(e)
+                raise e
+        print('[SignalGenerator] > Timer process done.')
 
 
 class UniformGenerator:
@@ -143,6 +197,7 @@ class UniformGenerator:
     std: float
         Standard deviation of the output signal.
     """
+
     def __init__(self, n_cha, mean=0.0, std=1.0):
         self.n_cha = n_cha
         self.mean = mean
@@ -163,6 +218,26 @@ class UniformGenerator:
         """
         return self.std * np.random.randn(chunk_size, self.n_cha) + self.mean
 
+    def get_chunks(self, n_chunks, chunk_size):
+        """ Function to generate several chunks at once.
+
+        Parameters
+        ------------
+        n_chunks : int
+            Number of chunks to generate
+        chunk_size : int
+            Chunk size in samples.
+
+        Returns
+        ------------
+        ndarray: [n_chunks x samples x channels]
+            Generated chunks.
+        """
+        data = np.empty((n_chunks, chunk_size, self.n_cha))
+        for i in range(n_chunks):
+            data[i, :, :] = self.get_chunk(chunk_size)
+        return data
+
 
 class EEGGenerator:
     """ Synthetic EEG generator.
@@ -182,6 +257,7 @@ class EEGGenerator:
         using the inverse FFT, stored offline and then played each time a
         chunk is requested.
     """
+
     def __init__(self, fs, n_cha, tones=None, pink_method="real-time"):
         self.fs = fs
         self.n_cha = n_cha
@@ -223,9 +299,10 @@ class EEGGenerator:
             Generated chunk.
         """
         # Get the time series
-        times = [self.current_time + i*(1/self.fs) for i in range(chunk_size)]
+        times = [self.current_time + i * (1 / self.fs) for i in
+                 range(chunk_size)]
         times = np.array(times)
-        self.current_time = self.current_time + chunk_size/self.fs
+        self.current_time = self.current_time + chunk_size / self.fs
 
         # Get the pink noise (1/f)
         if self.pink_method == "offline":
@@ -241,7 +318,7 @@ class EEGGenerator:
             self.pink_noise_sample += chunk_size
         else:
             # Real-time generation using Voss-McCartney algorithm
-            noise = self.generate_online_pink(chunk_size * self.n_cha)
+            noise = self.generate_online_pink(int(chunk_size * self.n_cha))
             chunk = noise.reshape(chunk_size, self.n_cha)
 
         # Add each tone
@@ -250,6 +327,26 @@ class EEGGenerator:
             chunk += np.tile(eeg_tone.reshape(chunk_size, 1), self.n_cha)
 
         return chunk
+
+    def get_chunks(self, n_chunks, chunk_size):
+        """ Function to generate several chunks at once.
+
+        Parameters
+        ------------
+        n_chunks : int
+            Number of chunks to generate
+        chunk_size : int
+            Chunk size in samples.
+
+        Returns
+        ------------
+        ndarray: [n_chunks x samples x channels]
+            Generated chunks.
+        """
+        data = np.empty((n_chunks, chunk_size, self.n_cha))
+        for i in range(n_chunks):
+            data[i, :, :] = self.get_chunk(chunk_size)
+        return data
 
     @staticmethod
     def generate_offline_pink(no_samples, exponent=0.51, amplitude=30):
@@ -276,7 +373,7 @@ class EEGGenerator:
         n = int(no_samples) + 1 if int(no_samples) & 1 == 1 else int(no_samples)
         scales = np.linspace(0, 0.5, n // 2 + 1)[1:]
         scales = scales ** (-exponent / 2)
-        pink_freq = np.random.normal(scale=scales) *\
+        pink_freq = np.random.normal(scale=scales) * \
                     np.exp(2j * np.pi * np.random.random(n // 2))
         fdata = np.concatenate([[0], pink_freq])
         sigma = np.sqrt(2 * np.sum(scales ** 2)) / n
