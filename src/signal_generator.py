@@ -178,7 +178,7 @@ class SignalGenerator:
         while not stop_event.value:
             try:
                 accurate_delay(update_ms)
-                queue_update.put(time.perf_counter())
+                queue_update.put(local_clock())
             except Exception as e:
                 print(e)
                 raise e
