@@ -1,20 +1,19 @@
 
 PASOS
 > Víctor Martínez-Cagigal, 16/04/2021
+> EDIT: Eduardo Santamaría-Vázquez, 19-09-2023
 ------------------------------------
 
 // Crear un environment de python con solamente los paquetes que requiere la aplicación
+cd "path/to/project"
 python -m venv python-env
-cd python-env/Scripts
-activate
+venv\Scripts\activate
 
+// Update python env
 python -m pip install --upgrade pip
 pip install --upgrade setuptools
-pip install -r "E:\SoftwareProjects\photodiode\src_python\requirements.txt"
+pip install -r "requirements.txt"
 pip install pyinstaller
-
-// Crear una carpeta que contendrá la build e irnos a ese path
-cd E:\SoftwareProjects\photodiode\build
 
 // Comprimir el main.py con pyinstaller en un directorio
 // IMPORTANTE: añadir todos aquellos archivos que no son .py y que, por tanto, pyinstaller no conoce

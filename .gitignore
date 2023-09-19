@@ -4,4 +4,4 @@ dist/
 build/
 install/
 .idea/
-
+*.spec
