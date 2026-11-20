@@ -1,3 +1,10 @@
+"""
+Author:   Víctor Martínez-Cagigal & Eduardo Santamaría-Vázquez
+Date:     20 November 2026
+Version:  2.4
+
+No functional changes in v2.4 (the errors are now shown with message boxes, see main.py).
+"""
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *

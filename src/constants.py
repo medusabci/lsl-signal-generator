@@ -1,21 +1,24 @@
 """
 Author:   Víctor Martínez-Cagigal & Eduardo Santamaría-Vázquez
-Date:     20 September 2023
-Version:  2.3
+Date:     20 November 2026
+Version:  2.4
+
+Changes in v2.4: the version number lives in version.py (VERSION is kept here for compatibility); EEG_10_20, EEG_10_10
+and EEG_10_05 are merged into the single list EEG_CHANNELS.
 """
-VERSION = "2.3"
+from version import VERSION
 
 # Images folder
 IMG_FOLDER = 'gui/images'
 STYLE_FILE = 'gui/style.css'
 
 # Channels
-EEG_10_20 = \
+_EEG_10_20 = \
     ['C3', 'C4', 'CZ', 'F3', 'F4', 'F7', 'F8', 'FP1', 'FP2', 'FPZ', 'FZ',
      'LPA', 'NAS', 'O1', 'O2', 'OZ', 'P3', 'P4', 'P7', 'P8', 'PZ', 'RPA',
      'T7', 'T8']
 
-EEG_10_10 = ['AF7', 'AF8', 'AFZ', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'CP1',
+_EEG_10_10 = ['AF7', 'AF8', 'AFZ', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'CP1',
              'CP2', 'CP3', 'CP4', 'CP5', 'CP6', 'CPZ', 'CZ', 'F1', 'F10', 'F2',
              'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'FC1', 'FC2', 'FC3',
              'FC4', 'FC5', 'FC6', 'FCZ', 'FT10', 'FT7', 'FT8', 'FT9', 'FP1',
@@ -24,7 +27,7 @@ EEG_10_10 = ['AF7', 'AF8', 'AFZ', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'CP1',
              'P8', 'P9', 'PO10', 'PO7', 'PO8', 'PO9', 'POZ', 'PZ', 'RPA',
              'T10', 'T7', 'T8', 'T9', 'TP7', 'TP8']
 
-EEG_10_05 = ['AF1', 'AF10', 'AF10H', 'AF1H', 'AF2', 'AF2H', 'AF3', 'AF3H',
+_EEG_10_05 = ['AF1', 'AF10', 'AF10H', 'AF1H', 'AF2', 'AF2H', 'AF3', 'AF3H',
              'AF4', 'AF4H', 'AF5', 'AF5H', 'AF6', 'AF6H', 'AF7', 'AF7H',
              'AF8', 'AF8H', 'AF9', 'AF9H', 'AFF1', 'AFF10', 'AFF10H',
              'AFF1H', 'AFF2', 'AFF2H', 'AFF3', 'AFF3H', 'AFF4', 'AFF4H',
@@ -69,3 +72,12 @@ EEG_10_05 = ['AF1', 'AF10', 'AF10H', 'AF1H', 'AF2', 'AF2H', 'AF3', 'AF3H',
              'TPP10H', 'TPP7', 'TPP7H', 'TPP8', 'TPP8H', 'TPP9', 'TPP9H',
              'TTP10', 'TTP10H', 'TTP7', 'TTP7H', 'TTP8', 'TTP8H', 'TTP9',
              'TTP9H']
+
+# Single list of channel labels: first the 10-20 system, then the labels of the 10-10 system and finally those of the
+# 10-05 system that are not already in the list (no duplicates, order of appearance). The three systems above are only
+# used to build it, so they are private (not exported by "from constants import *"). The anatomical landmarks (left and
+# right preauricular points and nasion) are not electrodes, so they are left out
+_NOT_ELECTRODES = ('LPA', 'RPA', 'NAS')
+EEG_CHANNELS = []
+for _system in (_EEG_10_20, _EEG_10_10, _EEG_10_05):
+    EEG_CHANNELS += [_label for _label in _system if _label not in EEG_CHANNELS and _label not in _NOT_ELECTRODES]

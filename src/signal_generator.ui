@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Signal generator</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -50,6 +50,12 @@
        </item>
        <item row="2" column="1">
         <widget class="QSpinBox" name="spinBox_lsl_chunk_size">
+         <property name="suffix">
+          <string> samples</string>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
          <property name="maximum">
           <number>1000</number>
          </property>
@@ -80,10 +86,27 @@
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QLineEdit" name="lineEdit_lsl_format">
-         <property name="text">
-          <string>float32</string>
-         </property>
+        <widget class="QComboBox" name="comboBox_lsl_format">
+         <item>
+          <property name="text">
+           <string>float32</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>double64</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>int32</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>int16</string>
+          </property>
+         </item>
         </widget>
        </item>
        <item row="4" column="0">
@@ -135,7 +158,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>Labels of channels</string>
+          <string>Channel labels</string>
          </property>
         </widget>
        </item>
@@ -169,6 +192,12 @@
        </item>
        <item row="3" column="1">
         <widget class="QDoubleSpinBox" name="doubleSpinBox_signal_sample_rate">
+         <property name="suffix">
+          <string> Hz</string>
+         </property>
+         <property name="minimum">
+          <double>1.000000000000000</double>
+         </property>
          <property name="maximum">
           <double>9999.000000000000000</double>
          </property>
@@ -272,7 +301,7 @@
           <item>
            <widget class="QCheckBox" name="checkBox_pink_online">
             <property name="text">
-             <string>Real-time pink noise generation</string>
+             <string>Generate the pink noise in real time</string>
             </property>
             <property name="checked">
              <bool>true</bool>
@@ -314,10 +343,6 @@
          <property name="text">
           <string>Start</string>
          </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>gui/images/icons/play.svg</normaloff>gui/images/icons/play.svg</iconset>
-         </property>
          <property name="iconSize">
           <size>
            <width>30</width>
@@ -340,10 +365,6 @@
          <property name="text">
           <string>Stop</string>
          </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>gui/images/icons/stop.svg</normaloff>gui/images/icons/stop.svg</iconset>
-         </property>
          <property name="iconSize">
           <size>
            <width>30</width>
@@ -360,6 +381,15 @@
     </item>
     <item>
      <widget class="QLabel" name="label_status">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>34</height>
+       </size>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
       <property name="font">
        <font>
         <italic>false</italic>

@@ -1,23 +1,23 @@
-
 PASOS
-> Víctor Martínez-Cagigal, 16/04/2021
-> EDIT: Eduardo Santamaría-Vázquez, 19-09-2023
+> Víctor Martínez-Cagigal
+> EDIT: v2.4, 20-11-2026: el instalador se genera con Inno Setup (build_release.ps1) en lugar de un SFX de WinRAR
 ------------------------------------
 
-// Crear un environment de python con solamente los paquetes que requiere la aplicación
-cd "path/to/project"
-python -m venv python-env
-venv\Scripts\activate
+// Crear un entorno virtual de Python con solamente los paquetes que requiere la aplicación
+cd "path/to/lsl-signal-generator"
+python -m venv .venv
+.\.venv\Scripts\activate
 
-// Update python env
 python -m pip install --upgrade pip
-pip install --upgrade setuptools
-pip install -r "requirements.txt"
-pip install pyinstaller
+pip install -r requirements.txt
 
-// Comprimir el main.py con pyinstaller en un directorio
-// IMPORTANTE: añadir todos aquellos archivos que no son .py y que, por tanto, pyinstaller no conoce
+// Instalar Inno Setup (una sola vez)
+winget install JRSoftware.InnoSetup
 
-[PASTE THE BUILD COMMAND]
+// Cambiar la versión: editar src\version.py (único sitio)
 
-// Crear un EXE autoextraíble con WinRAR (opción SFX) o un programa similar
+// Compilar con PyInstaller y generar el instalador
+.\build_release.ps1
+
+// Resultado: release\signal_generator_setup_<versión>.exe
+// (opciones: -SkipBuild reutiliza dist\ ; -SkipInstaller solo ejecuta PyInstaller)

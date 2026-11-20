@@ -1,9 +1,18 @@
+"""
+Author:   Víctor Martínez-Cagigal & Eduardo Santamaría-Vázquez
+Date:     20 November 2026
+Version:  2.4
+
+Changes in v2.4: get_icon() no longer rewrites the .svg files of the application (it failed when the program is installed
+in a read-only folder such as Program Files) and renders them in memory; resource_path() is new; the PIL functions
+(img_to_icon, img_to_pixmap), which nothing used, were removed together with the Pillow dependency.
+"""
 # Built-in modules
-import os, pathlib, re
+import os, re, sys
 # External imports
-from PIL import Image, ImageQt
 from PyQt5.QtGui import *
-from PyQt5.Qt import Qt
+from PyQt5.QtCore import QByteArray, Qt
+from PyQt5.QtSvg import QSvgRenderer
 import numpy as np
 # Medusa imports
 import constants
@@ -44,6 +53,15 @@ def select_entry_combobox_with_data(combobox, entry_data, force_selection=False,
                 raise ValueError('Entry text not valid')
             else:
                 return
+
+
+def resource_path(relative_path):
+    """ Absolute path of a resource of the application, both from source and from the PyInstaller bundle. """
+    if getattr(sys, 'frozen', False):
+        base = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+    else:
+        base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))     # src/
+    return os.path.join(base, relative_path)
 
 
 # --------------------------- COLOR CONVERSION ------------------------------- #
@@ -160,39 +178,6 @@ def hsv_to_rgb(hsv):
 
 
 # ---------------------------- USEFUL METHODS -------------------------------- #
-def img_to_icon(image):
-    """ Converts a PIL Image into a QIcon
-
-    :param image: PIL.Image
-        Image to convert (RGBA).
-    """
-    qim = ImageQt.ImageQt(image)
-    pix = QPixmap.fromImage(qim)
-    qicon = QIcon(pix)
-    return qicon
-
-
-def img_to_pixmap(image):
-    """ Converts a PIL image into a QPixmap
-
-    :param image: PIL.Image
-        Image to convert.
-    """
-    if image.mode == "RGB":
-        r, g, b = image.split()
-        im = Image.merge("RGB", (b, g, r))
-    elif image.mode == "RGBA":
-        r, g, b, a = image.split()
-        im = Image.merge("RGBA", (b, g, r, a))
-    elif image.mode == "L":
-        im = image.convert("RGBA")
-    im2 = im.convert("RGBA")
-    data = im2.tobytes("raw", "RGBA")
-    qim = QImage(data, im.size[0], im.size[1], QImage.Format_ARGB32)
-    pixmap = QPixmap.fromImage(qim)
-    return pixmap
-
-
 def clear_layout(layout):
     """ Clears a given layout.
 
@@ -299,10 +284,7 @@ def set_css_and_theme(gui_handle, theme_colors, stylesheet_path=None):
         Gui stylesheet.
     """
     if stylesheet_path is None:
-        start_dir = os.getcwd()
-        end_dir = os.path.dirname(__file__)
-        gui_dir_rel_path = os.path.relpath(end_dir, start=start_dir)
-        stylesheet_rel_path = '%s/style.css' % gui_dir_rel_path
+        stylesheet_rel_path = resource_path(constants.STYLE_FILE)
     else:
         stylesheet_rel_path = stylesheet_path
     stl = load_stylesheet(stylesheet_rel_path)
@@ -358,7 +340,7 @@ def get_icon(icon_name, theme_colors=None, enabled=True, custom_color=None):
         theme_colors = get_theme_colors('dark')
 
     # Does it exist?
-    rel_path = "%s/icons/svg/%s" % (constants.IMG_FOLDER, icon_name)
+    rel_path = resource_path("%s/icons/svg/%s" % (constants.IMG_FOLDER, icon_name))
     if not os.path.isfile(rel_path):
         print('[get_icon()] Icon %s not found!' % rel_path)
         return None
@@ -377,16 +359,11 @@ def get_icon(icon_name, theme_colors=None, enabled=True, custom_color=None):
         color_end = custom_color
 
     # Read the SVG data
-    fin = open(rel_path, "rt")
-    data = fin.read()
-    fin.close()
+    with open(rel_path, "rt") as fin:
+        data = fin.read()
 
     # Detect if gradient is there
-    gradient = '<linearGradient id="grad1" x1="0%%" y1="100%%" x2="100%%" ' \
-               'y2="0%%"> <stop offset="0%%" ' \
-               'style="stop-color:%s;stop-opacity:1"/> <stop ' \
-               'offset="100%%" style="stop-color:%s;stop-opacity:1" />' \
-               '</linearGradient>' % (color_start, color_end)
+    gradient = '<linearGradient id="grad1" x1="0%%" y1="100%%" x2="100%%" '                'y2="0%%"> <stop offset="0%%" '                'style="stop-color:%s;stop-opacity:1"/> <stop '                'offset="100%%" style="stop-color:%s;stop-opacity:1" />'                '</linearGradient>' % (color_start, color_end)
     if '"grad1"' not in data:
         # Not there, so create it
         idx = data.find('<path')
@@ -405,10 +382,11 @@ def get_icon(icon_name, theme_colors=None, enabled=True, custom_color=None):
     else:
         data = data.replace('<path ', '<path fill="%s" ' % fill_str)
 
-    # Write it in the file
-    fin = open(rel_path, "wt")
-    fin.write(data)
-    fin.close()
-
-    # Return the icon
-    return QIcon(rel_path)
+    # Render it in memory (the file is not modified)
+    renderer = QSvgRenderer(QByteArray(data.encode('utf-8')))
+    pixmap = QPixmap(96, 96)
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    renderer.render(painter)
+    painter.end()
+    return QIcon(pixmap)

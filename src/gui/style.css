@@ -458,6 +458,19 @@ QToolButton#toolButton_app_search{
     border: 0;
 }
 
+QLineEdit[invalid="true"] {
+    border: 2px solid @THEME_RED;
+}
+QComboBox:disabled {
+    background: @THEME_TEXT_DARK;
+    color: @THEME_TEXT_LIGHT;
+}
+QToolTip {
+    background-color: @THEME_BG_DARK;
+    color: @THEME_TEXT_LIGHT;
+    border: 1px solid @THEME_TEXT_DARK;
+    padding: 3px;
+}
 QLineEdit#lineEdit_app_search{
     background-color: @THEME_BG_SELECTED;
     border: 0;

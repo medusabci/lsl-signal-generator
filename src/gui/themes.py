@@ -1,3 +1,10 @@
+"""
+Author:   Víctor Martínez-Cagigal & Eduardo Santamaría-Vázquez
+Date:     20 November 2026
+Version:  2.4
+
+No changes in v2.4.
+"""
 themes = {
     'dark': {
         'THEME_TEXT_LIGHT': '#bbbbbb',

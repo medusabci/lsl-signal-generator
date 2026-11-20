@@ -5,3 +5,8 @@ build/
 install/
 .idea/
 *.spec
+release/
+__pycache__/
+*.pyc
+*.pyo
+logs/
