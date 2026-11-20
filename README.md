@@ -1,6 +1,5 @@
 # Signal generator
 
-**English** | [Español](README.es.md)
 
 Synthetic signal generator (simulated EEG or uniform noise) that is streamed over the network with [Lab Streaming Layer (LSL)](https://labstreaminglayer.org/). It is meant to test [MEDUSA](https://www.medusabci.com/) and any other LSL receiver (LabRecorder, viewers, your own scripts) without a real amplifier.
 
