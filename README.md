@@ -37,21 +37,6 @@ You do not need to install Python or any dependency.
 - **Meta-data.** XDF/LSL conventions: per channel `label`, `unit` (and `units`, for compatibility with v2.3 and with the MEDUSA outlet) and `type`; also `manufacturer`, `acquisition` and `synchronization` (`can_drop_samples = false`). `offset_mean` is not written: there is no acquisition delay.
 - **CPU.** A single sender thread that sleeps and only busy-waits for the last ~1.5 ms before each chunk: ≈ 2 % of one core with the default settings.
 
-## Changes in v2.4
-
-Found by testing v2.3 against what was learnt with signal-gtec:
-
-- **Fixed:** −528 ppm frequency drift (≈ 1.9 s per hour): the timer slept `chunk_period` after every push and accumulated the cost of each iteration.
-- **Fixed:** 100 % CPU in two processes (a timer and a sender thread that never slept).
-- **Fixed:** with 1 channel or 1-sample chunks no data arrived (`np.squeeze`), and closing while sending could leave a broken thread.
-- **Fixed:** every *Start* created a generator without closing the previous one (accumulated threads and processes, and the application did not exit); closing the window before ever starting raised an exception and did not close it; a failure while creating the stream left everything running.
-- **Fixed:** the "offline" pink noise accumulated the tones in its own buffer every time the loop repeated.
-- **Fixed:** the format was free text (any value failed on start), the chunk size and the sample rate could be 0, and with many channels and large chunks the buffer could ask for several GB.
-- **Fixed:** the program rewrote the `.svg` files of its icons (it fails when installed in a read-only folder) and depended on the working directory.
-- **UX:** error dialogs (the 2 s notification cut the text), validation before starting, labels in red when they do not match the channels, tooltips, format drop-down, parameters locked while transmitting, informative status, the window does not freeze while the signal is generated, and parameters are remembered.
-- **New:** XDF/LSL meta-data, consumer status, file logging, `version.py`, Inno Setup installer.
-- **Dependencies:** pandas and Pillow are removed (no longer used).
-
 ## Building from source
 
 Requirements: Windows, Python 3.10, and [Inno Setup 6 or 7](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`).
@@ -87,6 +72,4 @@ The result is `release\signal_generator_setup_<version>.exe`. The version is def
 | `installer/signal_generator.iss` | Inno Setup script |
 | `build_release.ps1` | Build and packaging |
 
-## Authors
 
-Víctor Martínez-Cagigal and Eduardo Santamaría-Vázquez (GIB-UVa).
